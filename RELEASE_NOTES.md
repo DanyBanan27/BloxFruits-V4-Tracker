@@ -1,18 +1,16 @@
-# Blox Fruits V4 Tracker 2.3.1
+# Blox Fruits V4 Tracker v2.4.1
 
 ## Highlights
 
-- Fixed overlapping and clipped controls in the Settings page by adding vertical scrolling.
-- Replaced Telegram contact with the project Discord invitation.
-
-- Time tracking for multiple races in each profile.
-- Configurable global timer hotkey and upgrade-readiness notifications.
-- Four themes and Russian/English UI.
-- SQLite-backed profiles, session history, and database backups.
-- Time-history clearing now recalculates and persists totals from remaining sessions.
+- Restores all 10 purchasable upgrades across Race V4 stages 2, 3, 4 and 5.
+- Stage 2: 1 upgrade; stage 3: 1; stage 4: 3; stage 5: 5.
+- Includes fragment costs, V4 time OR full-activation requirements, trial gates and the resulting transformation duration from the supplied wiki excerpt.
+- Preserves existing profiles and session history while expanding the database to all 10 upgrades.
 
 ## Windows release
 
-The EXE is built by GitHub Actions on Windows with Python 3.12. Each workflow run uploads the EXE as an artifact. A pushed `v*` tag creates a **draft** GitHub Release containing the EXE and `SHA256SUMS.txt`; review the draft before publishing it.
+Download `Blox Fruits V4 Tracker.exe` from this release. Python is not required. The app does not read game memory or automate gameplay; record each completed V4 activation manually or use the configured hotkey.
 
-The EXE is not automatically Authenticode-signed. See `SIGNING.md` if you have a trusted code-signing certificate.
+Community: https://discord.gg/SvYqcks5Pz
+
+This is an unofficial fan-made utility and is not affiliated with Roblox or the Blox Fruits developers. The EXE is not Authenticode-signed.
