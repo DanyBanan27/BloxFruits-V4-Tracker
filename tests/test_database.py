@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from main import Database, RACES
+from main import Database, RACES, theme_stylesheet
 
 
 class DatabaseRegressionTests(unittest.TestCase):
@@ -69,6 +69,11 @@ class DatabaseRegressionTests(unittest.TestCase):
         self.assertEqual(ghoul["total_v4_seconds"], 10)
         self.assertEqual(ghoul["training_seconds"], 10)
         self.assertEqual(ghoul["training_activations"], 1)
+
+    def test_admin_theme_defaults_to_red(self):
+        self.assertEqual(self.db.setting("theme"), "red")
+        self.assertEqual(self.db.setting("admin_red_theme_applied"), "0")
+        self.assertIn("#e42d4f", theme_stylesheet("red"))
 
     def test_profile_settings_persist(self):
         self.db.set_setting("theme", "purple")
