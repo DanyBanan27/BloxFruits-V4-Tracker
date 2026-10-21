@@ -33,47 +33,6 @@ class DatabaseRegressionTests(unittest.TestCase):
         self.db.close()
         self.temp_dir.cleanup()
 
-    def test_five_race_v4_upgrade_requirements(self):
-        steps = self.db.training_steps()
-        self.assertEqual(len(steps), 5)
-        actual = [
-            (
-                int(step["tier"]),
-                int(step["cost"]),
-                int(step["minutes_required"]),
-                int(step["activations_required"]),
-                int(step["activation_duration_seconds"]),
-            )
-            for step in steps
-        ]
-        self.assertEqual(actual, [
-            (1, 3000, 8, 7, 80),
-            (2, 3250, 10, 8, 85),
-            (3, 3500, 13, 10, 85),
-            (4, 3750, 15, 11, 90),
-            (5, 4000, 18, 12, 110),
-        ])
-
-    def test_legacy_ten_tier_data_is_migrated(self):
-        self.db.conn.execute("UPDATE training_steps SET cost=1000, minutes_required=3 WHERE tier=1")
-        self.db.conn.execute(
-            "INSERT OR REPLACE INTO training_steps "
-            "(tier,cost,activations_required,activation_duration_seconds,minutes_required,trial_required,title) "
-            "VALUES(10,4000,9,0,9,4,'Legacy Tier 10')"
-        )
-        self.db.conn.execute(
-            "UPDATE race_progress SET v4_tier=9 WHERE profile_id=? AND race='Ghoul'",
-            (self.profile_id,),
-        )
-        self.db.conn.execute("UPDATE profiles SET v4_tier=9 WHERE id=?", (self.profile_id,))
-        self.db.conn.commit()
-        self.db.close()
-        self.db = Database(self.db_path)
-        steps = self.db.training_steps()
-        self.assertEqual([int(step["tier"]) for step in steps], [1, 2, 3, 4, 5])
-        self.assertEqual(int(steps[0]["cost"]), 3000)
-        self.assertEqual(int(self.db.profile(self.profile_id, "Ghoul")["v4_tier"]), 5)
-
     def test_clear_time_history_resets_selected_race_only(self):
         self.db.add_session(self.profile_id, "Ghoul", 20, 0)
         self.db.add_session(self.profile_id, "Ghoul", 40, 0)

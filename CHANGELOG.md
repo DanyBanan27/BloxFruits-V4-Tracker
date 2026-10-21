@@ -1,12 +1,5 @@
 # Changelog
 
-## 2.4.0
-
-- Replaced the old ten-tier placeholder list with five Race V4 upgrade stages.
-- Updated fragment costs, approximate V4 training time, estimated activation counts, and typical activation durations from the supplied reference.
-- Added a database migration that updates existing training rows and caps legacy tier progress at the new maximum while preserving profile and session history.
-- Expanded the training reference table and updated the Windows version metadata.
-
 ## 2.3.1
 
 - Fixed the Settings page on smaller windows by placing its panels in a scroll area.

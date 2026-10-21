@@ -71,24 +71,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish the v2.4.0 public release after the main-branch build passes
-        if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'v2.4.0')
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: v2.4.0
-          target_commitish: ${{ github.sha }}
-          name: Blox Fruits V4 Tracker v2.4.0
-          body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: false
-          files: |
-            dist/Blox Fruits V4 Tracker.exe
-            dist/SHA256SUMS.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create draft GitHub release for other version tags
-        if: startsWith(github.ref, 'refs/tags/v') && github.ref_name != 'v2.4.0'
+      - name: Create draft GitHub release for version tags
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
           draft: true
