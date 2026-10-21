@@ -43,8 +43,8 @@ TRAININGS = [
     {"tier": 7, "cost": 3250, "activations": 8, "minutes": 10, "activation_duration": 85, "trial": 4, "label": "Стадия 5 — улучшение 2 (85 сек.)"},
     {"tier": 8, "cost": 3500, "activations": 10, "minutes": 13, "activation_duration": 85, "trial": 4, "label": "Стадия 5 — улучшение 3 (85 сек.)"},
     {"tier": 9, "cost": 3750, "activations": 11, "minutes": 15, "activation_duration": 90, "trial": 4, "label": "Стадия 5 — улучшение 4 (90 сек.)"},
-    {"tier": 10, "cost": 4000, "activations": 12, "minutes": 18, "activation_duration": 110, "trial": 4, "label": "Стадия 5 — улучшение 5 (110 сек.)"},
-}
+    {"tier": 10, "cost": 4000, "activations": 12, "minutes": 18, "activation_duration": 110, "trial": 4, "label": "Стадия 5 — улучшение 5 (110 сек.)"}
+]
 
 
 def app_data_dir() -> Path:
