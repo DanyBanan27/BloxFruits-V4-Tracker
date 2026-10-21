@@ -4,7 +4,7 @@ A lightweight Windows desktop companion for tracking Blox Fruits Race V4 time, t
 
 ![Blox Fruits V4 Tracker app icon](app_icon.png)
 
-**Current version:** `2.3.0`  
+**Current version:** `2.3.1`  
 **Interface languages:** Russian and English  
 **Community and support:** [Join the Discord server](https://discord.gg/SvYqcks5Pz)
 
@@ -38,8 +38,8 @@ The workflow in `.github/workflows/windows-release.yml` builds the app on a Wind
 3. To prepare a release, create and push a version tag, for example:
 
    ```bash
-   git tag v2.3.0
-   git push origin v2.3.0
+   git tag v2.3.1
+   git push origin v2.3.1
    ```
 
 4. Wait for the workflow to finish, then open **Releases** and review the generated **draft release**. Publish it after checking the notes, EXE, and checksum.
@@ -111,4 +111,3 @@ Pull requests and pushes to `main` are built and tested automatically by GitHub 
 ## License
 
 This project is licensed under the MIT License. See [`LICENSE`](LICENSE).
-"# BloxFruits-V4-Tracker" 

@@ -1,6 +1,9 @@
-# Blox Fruits V4 Tracker 2.3.0
+# Blox Fruits V4 Tracker 2.3.1
 
 ## Highlights
+
+- Fixed overlapping and clipped controls in the Settings page by adding vertical scrolling.
+- Replaced Telegram contact with the project Discord invitation.
 
 - Time tracking for multiple races in each profile.
 - Configurable global timer hotkey and upgrade-readiness notifications.

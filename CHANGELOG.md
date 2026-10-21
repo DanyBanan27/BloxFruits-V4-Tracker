@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.1
+
+- Fixed the Settings page on smaller windows by placing its panels in a scroll area.
+- Prevented settings buttons, community links, and footer notes from overlapping or being clipped.
+- Updated the developer contact to the Discord server and removed Telegram references from the app.
+
 ## 2.3.0
 
 - Added Emerald, Purple, White, and Black themes.
