@@ -77,10 +77,16 @@ class Database:
         # Save a one-time copy of an existing single-race database before a schema migration.
         if path.exists():
             try:
-                with sqlite3.connect(path) as probe:
+                # sqlite3.Connection's context manager commits/rolls back but does NOT
+                # close the connection. Always close this short-lived probe explicitly,
+                # otherwise Windows can keep the database file locked during cleanup.
+                probe = sqlite3.connect(path)
+                try:
                     has_multi_race_table = probe.execute(
                         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='race_progress'"
                     ).fetchone() is not None
+                finally:
+                    probe.close()
                 backup_path = path.with_name(path.stem + "_before_multirace_backup" + path.suffix)
                 if not has_multi_race_table and not backup_path.exists():
                     shutil.copy2(path, backup_path)
