@@ -33,46 +33,50 @@ class DatabaseRegressionTests(unittest.TestCase):
         self.db.close()
         self.temp_dir.cleanup()
 
-    def test_five_race_v4_upgrade_requirements(self):
+    def test_all_ten_upgrades_cover_stages_two_through_five(self):
         steps = self.db.training_steps()
-        self.assertEqual(len(steps), 5)
+        self.assertEqual(len(steps), 10)
         actual = [
-            (
-                int(step["tier"]),
-                int(step["cost"]),
-                int(step["minutes_required"]),
-                int(step["activations_required"]),
-                int(step["activation_duration_seconds"]),
-            )
-            for step in steps
+            (int(x["tier"]), int(x["cost"]), int(x["minutes_required"]),
+             int(x["activations_required"]), int(x["trial_required"]),
+             int(x["activation_duration_seconds"])) for x in steps
         ]
         self.assertEqual(actual, [
-            (1, 3000, 8, 7, 80),
-            (2, 3250, 10, 8, 85),
-            (3, 3500, 13, 10, 85),
-            (4, 3750, 15, 11, 90),
-            (5, 4000, 18, 12, 110),
+            (1, 1000, 3, 3, 1, 50),
+            (2, 1500, 5, 6, 2, 55),
+            (3, 2000, 4, 5, 3, 65),
+            (4, 2250, 5, 5, 3, 70),
+            (5, 2500, 10, 9, 3, 75),
+            (6, 3000, 8, 7, 4, 80),
+            (7, 3250, 10, 8, 4, 85),
+            (8, 3500, 13, 10, 4, 85),
+            (9, 3750, 15, 11, 4, 90),
+            (10, 4000, 18, 12, 4, 110),
         ])
 
-    def test_legacy_ten_tier_data_is_migrated(self):
-        self.db.conn.execute("UPDATE training_steps SET cost=1000, minutes_required=3 WHERE tier=1")
-        self.db.conn.execute(
-            "INSERT OR REPLACE INTO training_steps "
-            "(tier,cost,activations_required,activation_duration_seconds,minutes_required,trial_required,title) "
-            "VALUES(10,4000,9,0,9,4,'Legacy Tier 10')"
-        )
-        self.db.conn.execute(
-            "UPDATE race_progress SET v4_tier=9 WHERE profile_id=? AND race='Ghoul'",
-            (self.profile_id,),
-        )
-        self.db.conn.execute("UPDATE profiles SET v4_tier=9 WHERE id=?", (self.profile_id,))
+    def test_five_row_database_migrates_to_all_ten_without_losing_history(self):
+        self.db.conn.execute("DELETE FROM training_steps WHERE tier > 5")
+        self.db.conn.execute("UPDATE race_progress SET v4_tier=5 WHERE profile_id=? AND race='Ghoul'", (self.profile_id,))
+        self.db.conn.execute("UPDATE profiles SET v4_tier=5 WHERE id=?", (self.profile_id,))
+        self.db.conn.execute("INSERT INTO sessions(profile_id,race,stage_tier,duration_seconds,ended_at) VALUES(?,?,?,?,CURRENT_TIMESTAMP)",
+                             (self.profile_id, "Ghoul", 5, 420))
         self.db.conn.commit()
         self.db.close()
         self.db = Database(self.db_path)
         steps = self.db.training_steps()
-        self.assertEqual([int(step["tier"]) for step in steps], [1, 2, 3, 4, 5])
-        self.assertEqual(int(steps[0]["cost"]), 3000)
+        self.assertEqual([int(step["tier"]) for step in steps], list(range(1, 11)))
+        self.assertEqual(int(steps[0]["cost"]), 1000)
+        self.assertEqual(int(steps[9]["cost"]), 4000)
         self.assertEqual(int(self.db.profile(self.profile_id, "Ghoul")["v4_tier"]), 5)
+        self.assertEqual(int(self.db.profile(self.profile_id, "Ghoul")["total_v4_seconds"]), 420)
+
+    def test_training_readiness_accepts_time_or_activations(self):
+        step = self.db.current_training(0)
+        required_seconds = int(step["minutes_required"]) * 60
+        required_activations = int(step["activations_required"])
+        self.assertEqual(required_seconds, 180)
+        self.assertEqual(required_activations, 3)
+
 
     def test_clear_time_history_resets_selected_race_only(self):
         self.db.add_session(self.profile_id, "Ghoul", 20, 0)
