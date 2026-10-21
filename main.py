@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import ctypes
 import os
 import re
@@ -23,7 +24,7 @@ from PyQt6.QtWidgets import (
 )
 
 APP_NAME = "Blox Fruits V4 Tracker"
-APP_VERSION = "2.3.1"
+APP_VERSION = "2.4.0 ADMIN"
 RACES = ["Human", "Rabbit", "Shark", "Angel", "Ghoul", "Cyborg", "Draco"]
 DEFAULT_HOTKEY = "F8"
 HOTKEY_ID = 0xB40
@@ -203,7 +204,8 @@ class Database:
         default_settings = {
             "global_hotkey": DEFAULT_HOTKEY,
             "language": "ru",
-            "theme": "emerald",
+            "theme": "red",
+            "admin_red_theme_applied": "0",
             "notify_ready": "1",
             "notify_sound": "0",
             "minimize_to_tray": "0",
@@ -484,6 +486,7 @@ QFrame#sidebar { background: #0d1528; border-right: 1px solid #202c45; }
 QFrame#panel, QFrame#statCard { background: #121d32; border: 1px solid #243451; border-radius: 15px; }
 QFrame#statCard { min-height: 112px; }
 QLabel#brand { font-size: 17pt; font-weight: 800; color: #62e4ff; }
+QLabel#adminBadge { color: #ff687d; background: #351019; border: 1px solid #e42d4f; padding: 5px 8px; border-radius: 7px; font-size: 8pt; font-weight: 800; }
 QLabel#muted { color: #8ea3c4; }
 QLabel#pageTitle { font-size: 23pt; font-weight: 750; }
 QLabel#statNumber { font-size: 21pt; font-weight: 750; color: #f5f9ff; }
@@ -572,6 +575,21 @@ THEME_COLORS = {
         "#1cc5e8":"#348fc8", "#0f192b":"#0b0d10", "#131f34":"#12151a",
         "#253651":"#252a31", "#1a2942":"#171a20", "#afc6e9":"#bdc5d0",
         "#202f49":"#171a1f"
+    },
+    "red": {
+        "#0a1020":"#1b070c", "#0d1528":"#290b12", "#121d32":"#351019",
+        "#202c45":"#5c1c28", "#243451":"#632330", "#ecf4ff":"#fff0f2",
+        "#8ea3c4":"#d0a0a8", "#f5f9ff":"#fff7f8", "#62e4ff":"#ff687d",
+        "#65e7ff":"#ff657a", "#69f0ae":"#ff95a6", "#202f4b":"#4a1721",
+        "#344866":"#71303d", "#2a3e61":"#5e2430", "#5a7ca8":"#a64a5a",
+        "#16a9d0":"#e42d4f", "#04121d":"#1c0509", "#48d6f5":"#ff6278",
+        "#472538":"#53202b", "#75405a":"#894052", "#ffd9e6":"#ffe4eb",
+        "#9dafce":"#d4a5ad", "#1b2d4b":"#411723", "#0c1628":"#25090f",
+        "#2b3c59":"#602332", "#139dca":"#d91f41", "#1f7da0":"#9e1830",
+        "#0b1424":"#1f070c", "#2b3b58":"#57202b", "#eaf8ff":"#fff1f4",
+        "#1cc5e8":"#ff405e", "#0f192b":"#2b0d13", "#131f34":"#3b141d",
+        "#253651":"#56202c", "#1a2942":"#431722", "#afc6e9":"#efb6c1",
+        "#202f49":"#431722"
     }
 }
 
@@ -611,7 +629,13 @@ _TRANSLATIONS = {
     "Тип события": "Event type", "Длительность / расход": "Duration / cost", "Дата и время": "Date and time", "ID": "ID",
     "Горячая клавиша таймера": "Timer hotkey", "Глобальная клавиша работает, даже когда открыта игра. Нажми её один раз для старта V4 и повторно — для остановки и сохранения.": "The global hotkey works while the game is active. Press once to start V4 tracking and again to stop and save.",
     "Сохранить горячую клавишу": "Save hotkey", "Новая комбинация:": "New shortcut:", "Статус регистрации клавиши появится здесь.": "Hotkey status will appear here.",
-    "Интерфейс": "Interface", "Язык интерфейса": "Interface language", "Тема оформления": "Theme", "Русский": "Russian", "Изумрудная": "Emerald", "Пурпурная": "Purple", "Белая": "White", "Чёрная": "Black",
+    "Интерфейс": "Interface", "Язык интерфейса": "Interface language", "Тема оформления": "Theme", "Русский": "Russian", "Изумрудная": "Emerald", "Пурпурная": "Purple", "Белая": "White", "Чёрная": "Black", "Красная": "Red",
+    "Админские инструменты": "Admin tools", "Экспортировать историю (CSV)": "Export history (CSV)", "Экспортировать прогресс (CSV)": "Export progress (CSV)", "Проверить целостность базы": "Check database integrity",
+    "Экспорт истории": "Export history", "Экспорт прогресса": "Export progress", "CSV-файлы (*.csv)": "CSV files (*.csv)", "Нет данных для экспорта.": "There is no data to export.",
+    "CSV-файл успешно сохранён:": "CSV file saved:", "Записей:": "Rows:", "Проверка целостности БД": "Database integrity check", "База данных исправна.": "Database integrity check passed.",
+    "База данных сообщила об ошибке:": "Database reported an integrity issue:", "Профилей:": "Profiles:", "Рас в прогрессе:": "Race entries:", "Сессий:": "Sessions:", "Тренировок:": "Upgrades:",
+    "Уровень игрока": "Player level", "V4 открыта": "V4 unlocked", "Активации этапа": "Stage activations", "Время этапа": "Stage time", "Общее время расы": "Total race time",
+    "Длительность (сек.)": "Duration (sec.)", "Да": "Yes", "Нет": "No",
     "Уведомления": "Notifications", "Уведомлять при готовности к улучшению": "Notify when an upgrade is ready", "Звуковой сигнал вместе с уведомлением": "Play a sound with notifications",
     "Профиль:": "Profile:", "Раса:": "Race:",
     "Дополнительные настройки": "Additional settings", "Запускать вместе с Windows": "Launch with Windows", "Сворачивать в трей при закрытии окна": "Minimize to tray when closing the window",
@@ -912,6 +936,10 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.db = Database()
+        # The admin edition uses the red theme on its first launch, then respects future choices.
+        if self.db.setting("admin_red_theme_applied", "0") != "1":
+            self.db.set_setting("theme", "red")
+            self.db.set_setting("admin_red_theme_applied", "1")
         self.current_profile_id: Optional[int] = None
         self.current_race: str = "Human"
         self.timer_running = False
@@ -925,11 +953,11 @@ class MainWindow(QMainWindow):
         self._hotkey_was_down = False
         self._really_quit = False
         self._ready_states = {}
-        self.setWindowTitle(APP_NAME)
+        self.setWindowTitle(f"{APP_NAME} · ADMIN EDITION")
         self.setWindowIcon(QIcon(str(ICON_PATH)))
         self.resize(1250, 850)
         self.setMinimumSize(1000, 700)
-        self.setStyleSheet(theme_stylesheet(self.db.setting("theme", "emerald")))
+        self.setStyleSheet(theme_stylesheet(self.db.setting("theme", "red")))
 
         root = QWidget(); root.setObjectName("root")
         outer = QHBoxLayout(root); outer.setContentsMargins(0, 0, 0, 0); outer.setSpacing(0)
@@ -986,8 +1014,9 @@ class MainWindow(QMainWindow):
         sidebar = QFrame(); sidebar.setObjectName("sidebar"); sidebar.setFixedWidth(218)
         lay = QVBoxLayout(sidebar); lay.setContentsMargins(15, 22, 15, 18); lay.setSpacing(10)
         brand = QLabel("V4 TRACKER"); brand.setObjectName("brand")
-        sub = QLabel("BLOX FRUITS  •  COMPANION"); sub.setObjectName("muted"); sub.setStyleSheet("font-size:8pt; letter-spacing:1px;")
-        lay.addWidget(brand); lay.addWidget(sub); lay.addSpacing(28)
+        admin_badge = QLabel("ADMIN EDITION"); admin_badge.setObjectName("adminBadge")
+        sub = QLabel("BLOX FRUITS  •  PERSONAL BUILD"); sub.setObjectName("muted"); sub.setStyleSheet("font-size:8pt; letter-spacing:1px;")
+        lay.addWidget(brand); lay.addWidget(admin_badge); lay.addWidget(sub); lay.addSpacing(28)
         self.nav_buttons = []
         nav_items = [("◈   Обзор", 0), ("♙   Профили", 1), ("✦   База тренировок", 2), ("◷   История", 3), ("⚙   Настройки", 4)]
         for label, idx in nav_items:
@@ -1143,8 +1172,8 @@ class MainWindow(QMainWindow):
         self.language_combo = QComboBox(); self.language_combo.addItem("Русский", "ru"); self.language_combo.addItem("English", "en")
         self.language_combo.setCurrentIndex(max(0, self.language_combo.findData(self.db.setting("language", "ru"))))
         self.theme_combo = QComboBox()
-        for label, key in [("Изумрудная", "emerald"), ("Пурпурная", "purple"), ("Белая", "white"), ("Чёрная", "black")]: self.theme_combo.addItem(label, key)
-        self.theme_combo.setCurrentIndex(max(0, self.theme_combo.findData(self.db.setting("theme", "emerald"))))
+        for label, key in [("Красная", "red"), ("Изумрудная", "emerald"), ("Пурпурная", "purple"), ("Белая", "white"), ("Чёрная", "black")]: self.theme_combo.addItem(label, key)
+        self.theme_combo.setCurrentIndex(max(0, self.theme_combo.findData(self.db.setting("theme", "red"))))
         appbox.addWidget(appearance_title, 0, 0, 1, 2)
         appbox.addWidget(QLabel("Язык интерфейса"), 1, 0); appbox.addWidget(self.language_combo, 1, 1)
         appbox.addWidget(QLabel("Тема оформления"), 2, 0); appbox.addWidget(self.theme_combo, 2, 1)
@@ -1711,7 +1740,7 @@ class MainWindow(QMainWindow):
             if isinstance(widget, QLineEdit):
                 widget.setPlaceholderText(localize_text(widget.placeholderText(), lang))
         self.page_title.setText(localize_text(["Обзор", "Профили", "База тренировок", "История", "Настройки"][self.stack.currentIndex()], lang))
-        self.setWindowTitle(APP_NAME if lang == "ru" else "Blox Fruits V4 Tracker")
+        self.setWindowTitle(f"{APP_NAME} · ADMIN EDITION")
         # Re-apply action labels explicitly after the recursive translator. This also
         # prevents empty button captions on some Qt/Windows stylesheet combinations.
         for button, key in (
@@ -1724,7 +1753,7 @@ class MainWindow(QMainWindow):
                 button.setMinimumHeight(42)
                 theme = self.db.setting("theme", "emerald")
                 text_color = {"emerald": "#e8fff2", "purple": "#fbf1ff",
-                              "white": "#1c2738", "black": "#e6e8ec"}.get(theme, "#ecf4ff")
+                              "white": "#1c2738", "black": "#e6e8ec", "red": "#fff0f2"}.get(theme, "#ecf4ff")
                 button.setStyleSheet(
                     f"QPushButton {{ color: {text_color}; min-height: 32px; padding: 8px 12px; }}"
                 )
