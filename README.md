@@ -4,15 +4,19 @@ A lightweight Windows desktop companion for tracking Blox Fruits Race V4 time, t
 
 ![Blox Fruits V4 Tracker app icon](app_icon.png)
 
-**Current version:** `2.3.1`  
+**Current version:** `2.4.1`  
 **Interface languages:** Russian and English  
 **Community and support:** [Join the Discord server](https://discord.gg/SvYqcks5Pz)
 
 > This is an unofficial fan-made tracker. It is not affiliated with, endorsed by, or sponsored by Roblox or the Blox Fruits developers. The app does not connect to Roblox, inspect game memory, or automate gameplay. V4 time is recorded manually or with the configured global hotkey.
 
+## Race V4 upgrade reference
+
+The tracker models the 10 purchasable upgrades after awakening: 1 in stage 2, 1 in stage 3, 3 in stage 4, and 5 in stage 5. Training readiness is met by the required V4 time **or** the required number of full activations. The initial awakening unlock (stage 1) is tracked separately.
+
 ## Features
 
-- Track V4 time overall and for the current upgrade stage.
+- Track all 10 purchasable Race V4 upgrades across stages 2–5, including cost, V4 time OR full activation count, trial gate, and resulting transformation duration.
 - Keep several races under one account profile, with separate progress for each race.
 - Track player level, fragments, V4 tier, trials, training history, and activation sessions.
 - Use a configurable global hotkey (default: `F8`) while the game is focused.
