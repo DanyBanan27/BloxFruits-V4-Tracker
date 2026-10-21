@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
 )
 
 APP_NAME = "Blox Fruits V4 Tracker"
-APP_VERSION = "2.4.1 ADMIN"
+APP_VERSION = "2.4.0 ADMIN"
 RACES = ["Human", "Rabbit", "Shark", "Angel", "Ghoul", "Cyborg", "Draco"]
 DEFAULT_HOTKEY = "F8"
 HOTKEY_ID = 0xB40
@@ -35,17 +35,17 @@ ICON_PATH = BUNDLE_DIR / "app_icon.ico"
 DISCORD_URL = "https://discord.gg/SvYqcks5Pz"
 
 TRAININGS = [
-    {"tier": 1, "cost": 1000, "activations": 3, "minutes": 3, "activation_duration": 50, "trial": 1, "label": "Стадия 2 — первое улучшение (50 сек.)"},
-    {"tier": 2, "cost": 1500, "activations": 6, "minutes": 5, "activation_duration": 55, "trial": 2, "label": "Стадия 3 — улучшение навыка (55 сек.)"},
-    {"tier": 3, "cost": 2000, "activations": 5, "minutes": 4, "activation_duration": 65, "trial": 3, "label": "Стадия 4 — улучшение 1 (65 сек.)"},
-    {"tier": 4, "cost": 2250, "activations": 5, "minutes": 5, "activation_duration": 70, "trial": 3, "label": "Стадия 4 — улучшение 2 (70 сек.)"},
-    {"tier": 5, "cost": 2500, "activations": 9, "minutes": 10, "activation_duration": 75, "trial": 3, "label": "Стадия 4 — улучшение 3 (75 сек.)"},
-    {"tier": 6, "cost": 3000, "activations": 7, "minutes": 8, "activation_duration": 80, "trial": 4, "label": "Стадия 5 — улучшение 1 (80 сек.)"},
-    {"tier": 7, "cost": 3250, "activations": 8, "minutes": 10, "activation_duration": 85, "trial": 4, "label": "Стадия 5 — улучшение 2 (85 сек.)"},
-    {"tier": 8, "cost": 3500, "activations": 10, "minutes": 13, "activation_duration": 85, "trial": 4, "label": "Стадия 5 — улучшение 3 (85 сек.)"},
-    {"tier": 9, "cost": 3750, "activations": 11, "minutes": 15, "activation_duration": 90, "trial": 4, "label": "Стадия 5 — улучшение 4 (90 сек.)"},
-    {"tier": 10, "cost": 4000, "activations": 12, "minutes": 18, "activation_duration": 110, "trial": 4, "label": "Стадия 5 — улучшение 5 (110 сек.)"},
-}
+    {"tier": 1, "cost": 1000, "activations": 3, "minutes": 3, "trial": 1, "label": "Energy Training Tier 1"},
+    {"tier": 2, "cost": 1500, "activations": 5, "minutes": 5, "trial": 2, "label": "Energy Training Tier 2"},
+    {"tier": 3, "cost": 2000, "activations": 4, "minutes": 4, "trial": 3, "label": "Energy Training Tier 3"},
+    {"tier": 4, "cost": 2250, "activations": 5, "minutes": 5, "trial": 3, "label": "Energy Training Tier 4"},
+    {"tier": 5, "cost": 2500, "activations": 10, "minutes": 10, "trial": 3, "label": "Energy Training Tier 5"},
+    {"tier": 6, "cost": 3000, "activations": 5, "minutes": 5, "trial": 4, "label": "Energy Training Tier 6"},
+    {"tier": 7, "cost": 3250, "activations": 6, "minutes": 6, "trial": 4, "label": "Energy Training Tier 7"},
+    {"tier": 8, "cost": 3500, "activations": 7, "minutes": 7, "trial": 4, "label": "Energy Training Tier 8"},
+    {"tier": 9, "cost": 3750, "activations": 8, "minutes": 8, "trial": 4, "label": "Energy Training Tier 9"},
+    {"tier": 10, "cost": 4000, "activations": 9, "minutes": 9, "trial": 4, "label": "Energy Training Tier 10 (MAX)"},
+]
 
 
 def app_data_dir() -> Path:
@@ -67,13 +67,6 @@ def fmt_time(seconds: float) -> str:
 
 def fmt_num(value: int) -> str:
     return f"{int(value):,}".replace(",", " ")
-
-
-def training_requirements_met(step, training_seconds: float, training_activations: int) -> bool:
-    """Training may be completed by V4 time OR by the required full activations."""
-    seconds_required = int(step["minutes_required"]) * 60
-    activations_required = int(step["activations_required"])
-    return float(training_seconds) >= seconds_required or int(training_activations) >= activations_required
 
 
 class Database:
@@ -139,7 +132,6 @@ class Database:
             tier INTEGER PRIMARY KEY,
             cost INTEGER NOT NULL,
             activations_required INTEGER NOT NULL,
-            activation_duration_seconds INTEGER NOT NULL DEFAULT 0,
             minutes_required INTEGER NOT NULL DEFAULT 0,
             trial_required INTEGER NOT NULL,
             title TEXT NOT NULL
@@ -178,7 +170,6 @@ class Database:
         self._add_column_if_missing("training_history", "previous_tier", "INTEGER NOT NULL DEFAULT 0")
         self._add_column_if_missing("training_history", "previous_training_seconds", "REAL NOT NULL DEFAULT 0")
         self._add_column_if_missing("training_history", "previous_activations", "INTEGER NOT NULL DEFAULT 0")
-        self._add_column_if_missing("training_steps", "activation_duration_seconds", "INTEGER NOT NULL DEFAULT 0")
 
         # Copy old profile-level race fields into the new per-race table once.
         self.conn.execute("""
@@ -203,18 +194,13 @@ class Database:
 
         for item in TRAININGS:
             self.conn.execute(
-                "INSERT OR IGNORE INTO training_steps(tier,cost,activations_required,activation_duration_seconds,minutes_required,trial_required,title) VALUES(?,?,?,?,?,?,?)",
-                (item["tier"], item["cost"], item["activations"], item["activation_duration"], item["minutes"], item["trial"], item["label"]),
+                "INSERT OR IGNORE INTO training_steps(tier,cost,activations_required,minutes_required,trial_required,title) VALUES(?,?,?,?,?,?)",
+                (item["tier"], item["cost"], item["activations"], item["minutes"], item["trial"], item["label"]),
             )
-            # Keep existing installations aligned with the current game reference data.
             self.conn.execute(
-                "UPDATE training_steps SET cost=?, activations_required=?, activation_duration_seconds=?, minutes_required=?, trial_required=?, title=? WHERE tier=?",
-                (item["cost"], item["activations"], item["activation_duration"], item["minutes"], item["trial"], item["label"], item["tier"]),
+                "UPDATE training_steps SET minutes_required=? WHERE tier=? AND minutes_required=0",
+                (item["minutes"], item["tier"]),
             )
-        self.conn.execute("DELETE FROM training_steps WHERE tier > ?", (len(TRAININGS),))
-        # Keep tier values within the full ten-upgrade progression.
-        self.conn.execute("UPDATE race_progress SET v4_tier=MIN(v4_tier, ?)", (len(TRAININGS),))
-        self.conn.execute("UPDATE profiles SET v4_tier=MIN(v4_tier, ?)", (len(TRAININGS),))
         default_settings = {
             "global_hotkey": DEFAULT_HOTKEY,
             "language": "ru",
@@ -619,26 +605,11 @@ _TRANSLATIONS = {
     "✦   База тренировок": "✦   Training database", "◷   История": "◷   History",
     "⚙   Настройки": "⚙   Settings", "BLOX FRUITS  •  COMPANION": "BLOX FRUITS  •  COMPANION",
     "ТВОЙ ПРОГРЕСС": "YOUR PROGRESS", "Локальная база SQLite\nДанные хранятся на ПК": "Local SQLite database\nData is stored on this PC",
-    "Версия 2.4.1 ADMIN · SQLite\nДанные хранятся на ПК": "Version 2.4.1 ADMIN · SQLite\nData is stored on this PC",
+    "Версия 2.3.1 · SQLite\nДанные хранятся на ПК": "Version 2.3.1 · SQLite\nData is stored on this PC",
     "Обзор": "Overview", "Профили": "Profiles", "База тренировок": "Training database", "История": "History", "Настройки": "Settings",
     "Твой прогресс по Race V4": "Your Race V4 progress", "РАСА": "RACE", "УРОВЕНЬ ИГРОКА": "PLAYER LEVEL",
     "ФРАГМЕНТЫ": "FRAGMENTS", "ВРЕМЯ В V4": "V4 TIME", "Выбранный профиль": "Selected profile",
     "Максимум: 3000": "Maximum: 3000", "Баланс аккаунта": "Account balance", "По выбранной расе": "For selected race",
-    "Время ИЛИ активации": "Time OR activations", "Испытаний пройдено": "Trials required",
-    "Стадия 2 — первое улучшение (50 сек.)": "Stage 2 — first upgrade (50 s)",
-    "Стадия 3 — улучшение навыка (55 сек.)": "Stage 3 — skill upgrade (55 s)",
-    "Стадия 4 — улучшение 1 (65 сек.)": "Stage 4 — upgrade 1 (65 s)",
-    "Стадия 4 — улучшение 2 (70 сек.)": "Stage 4 — upgrade 2 (70 s)",
-    "Стадия 4 — улучшение 3 (75 сек.)": "Stage 4 — upgrade 3 (75 s)",
-    "Стадия 5 — улучшение 1 (80 сек.)": "Stage 5 — upgrade 1 (80 s)",
-    "Стадия 5 — улучшение 2 (85 сек.)": "Stage 5 — upgrade 2 (85 s)",
-    "Стадия 5 — улучшение 3 (85 сек.)": "Stage 5 — upgrade 3 (85 s)",
-    "Стадия 5 — улучшение 4 (90 сек.)": "Stage 5 — upgrade 4 (90 s)",
-    "Стадия 5 — улучшение 5 (110 сек.)": "Stage 5 — upgrade 5 (110 s)",
-    " полн. акт.": " full activations", " мин ИЛИ ": " min OR ",
-    " сек. трансформации после улучшения": " s transformation after upgrade",
-    "Всего 10 улучшений в рамках стадий 2–5. Для тренировки достаточно нужного времени ИЛИ указанного числа полных активаций.": "10 upgrades in stages 2–5. Training requires the specified V4 time OR the specified number of full activations.",
-    "Название улучшения": "Upgrade",
     "Следующая тренировка": "Next upgrade", "Добавь профиль, чтобы начать": "Add a profile to get started",
     "Стоимость и требования появятся здесь.": "Cost and requirements will appear here.", "Время этапа: 00:00:00 / —": "Stage time: 00:00:00 / —",
     "Фрагменты: —": "Fragments: —", "Испытание: —": "Trial: —", "ОЖИДАЕТ ДАННЫХ": "WAITING FOR DATA",
@@ -650,7 +621,7 @@ _TRANSLATIONS = {
     "Один профиль = один аккаунт. Внутри можно вести несколько рас с отдельным прогрессом.": "One profile equals one account. Track several races with independent progress.",
     "＋  Добавить профиль": "＋  Add profile", "Изменить выбранный": "Edit selected", "Удалить профиль": "Delete profile",
     "Профиль": "Profile", "Расы": "Races", "Уровень": "Level", "Прогресс рас": "Race progress", "Общее время": "Total time",
-    "Справочник улучшений Race V4. Время и число активаций приблизительные; длительность одной активации указана отдельно.": "Race V4 upgrade reference. Time and activation count are estimates; typical duration per activation is shown separately.",
+    "Справочник тренировок V4. Готовность считается только по времени в V4 — активации не учитываются.": "V4 upgrade reference. Readiness is based on V4 time only; activations are not counted.",
     "Tier": "Tier", "Название": "Name", "Нужно времени в V4": "V4 time required", "Испытание": "Trial",
     "Таймер не считывает игру автоматически: после каждой трансформации сохрани сессию. Расы и их время хранятся отдельно.": "The tracker does not read the game automatically. Save each V4 session manually; race times are stored separately.",
     "История выбранной расы. Можно удалить ошибочную сессию или отменить последнюю тренировку.": "History for the selected race. Delete an incorrect session or undo the latest upgrade.",
@@ -683,7 +654,7 @@ _TRANSLATIONS = {
     "Уровни, испытания и время хранятся отдельно для каждой расы. Фрагменты и уровень игрока общие для аккаунта.": "Tier, trials, and time are stored separately for each race. Fragments and player level are shared by the account.",
     "Профиль:": "Profile:", "Раса:": "Race:", "Сначала добавь профиль": "Add a profile first", "Нет рас": "No races",
     "ВРЕМЯ V4": "V4 TIME", "● Время сессии сохранено": "● Session time saved", "Race V4 для этой расы ещё не открыта": "Race V4 is not unlocked for this race yet",
-    "Все 10 улучшений завершены ✦": "All 10 upgrades completed ✦", "НУЖНО ОТКРЫТЬ V4": "UNLOCK V4 FIRST", "МАКСИМАЛЬНЫЙ УРОВЕНЬ": "MAXIMUM TIER",
+    "Все 10 тренировок завершены ✦": "All 10 upgrades completed ✦", "НУЖНО ОТКРЫТЬ V4": "UNLOCK V4 FIRST", "МАКСИМАЛЬНЫЙ УРОВЕНЬ": "MAXIMUM TIER",
     "✓ МОЖНО ТРЕНИРОВАТЬСЯ": "✓ UPGRADE AVAILABLE", "МОЖНО ТРЕНИРОВАТЬСЯ": "UPGRADE AVAILABLE", "MAX": "MAX",
     "V4-сессия": "V4 session", "Тренировка": "Upgrade", "фрагментов": "fragments", "фрагменты": "fragments", "Фрагменты": "Fragments",
     "Отметь открытие V4 в настройках профиля, когда оно будет доступно.": "Mark V4 as unlocked in profile settings when available.",
@@ -807,7 +778,7 @@ class ProfileDialog(QDialog):
         self._last_edit_race = ""
         self.edit_race.currentTextChanged.connect(self._edit_race_changed)
         self.unlocked = QCheckBox("Race V4 открыта для выбранной расы")
-        self.tier = QSpinBox(); self.tier.setRange(0, len(TRAININGS))
+        self.tier = QSpinBox(); self.tier.setRange(0, 10)
         self.trials = QSpinBox(); self.trials.setRange(0, 5)
         self.unlocked.stateChanged.connect(self._toggle_unlocked)
         race_form.addRow("Настраиваемая раса", self.edit_race)
@@ -1134,19 +1105,12 @@ class MainWindow(QMainWindow):
 
     def _build_training_page(self):
         page = QWidget(); lay = QVBoxLayout(page); lay.setContentsMargins(0, 0, 0, 0); lay.setSpacing(14)
-        intro = QLabel("Всего 10 улучшений в рамках стадий 2–5. Для тренировки достаточно нужного времени ИЛИ указанного числа полных активаций.")
+        intro = QLabel("Справочник тренировок V4. Готовность считается только по времени в V4 — активации не учитываются.")
         intro.setObjectName("muted"); lay.addWidget(intro)
-        self.training_table = self._make_table(["Tier", "Название улучшения", "Фрагменты", "Время ИЛИ активации", "Испытаний пройдено"])
-        steps = self.db.training_steps()
-        self.training_table.setRowCount(len(steps))
-        for row, step in enumerate(steps):
-            values = [
-                str(step["tier"]),
-                step["title"],
-                fmt_num(step["cost"]),
-                f"{step['minutes_required']} мин ИЛИ {step['activations_required']} полн. акт.",
-                str(step["trial_required"]),
-            ]
+        self.training_table = self._make_table(["Tier", "Название", "Фрагменты", "Нужно времени в V4", "Испытание"])
+        self.training_table.setRowCount(10)
+        for row, step in enumerate(self.db.training_steps()):
+            values = [str(step["tier"]), step["title"], fmt_num(step["cost"]), f"{step['minutes_required']} мин", str(step["trial_required"])]
             for col, value in enumerate(values): self.training_table.setItem(row, col, QTableWidgetItem(value))
         lay.addWidget(self.training_table, 1)
         note = QLabel("Таймер не считывает игру автоматически: после каждой трансформации сохрани сессию. Расы и их время хранятся отдельно.")
@@ -1391,7 +1355,7 @@ class MainWindow(QMainWindow):
             self.can_train_label.setText("НУЖНО ОТКРЫТЬ V4"); self.can_train_label.setObjectName("warning")
             self.train_button.setEnabled(False); self.start_button.setEnabled(False)
         elif not step:
-            self.next_training_title.setText("Все 10 улучшений завершены ✦")
+            self.next_training_title.setText("Все 10 тренировок завершены ✦")
             self.training_meta.setText("Для этой расы V4 максимального уровня. Таймер и история всё ещё доступны.")
             self.act_progress.setValue(100); self.act_caption.setText("Время этапа: MAX")
             self.fragment_caption.setText("Фрагменты аккаунта: " + fmt_num(p["fragments"]))
@@ -1400,36 +1364,25 @@ class MainWindow(QMainWindow):
             self.train_button.setEnabled(False); self.start_button.setEnabled(not self.timer_running)
         else:
             required_seconds = int(step["minutes_required"]) * 60
-            required_activations = int(step["activations_required"])
             got_seconds = float(p["training_seconds"])
-            got_activations = int(p["training_activations"])
             if self.timer_running and self.timer_profile_id == p["id"] and self.timer_race == self.current_race and self.timer_started_at is not None:
                 got_seconds += time.monotonic() - self.timer_started_at
             cost = int(step["cost"]); trial = int(step["trial_required"])
             time_ready = got_seconds >= required_seconds
-            activations_ready = got_activations >= required_activations
-            training_ready = training_requirements_met(step, got_seconds, got_activations)
             self.next_training_title.setText(step["title"])
-            self.training_meta.setText(
-                f"Улучшение до Tier {step['tier']} • {fmt_num(cost)} фрагментов • "
-                f"{step['activation_duration_seconds']} сек. трансформации после улучшения"
-            )
-            ratio = max(got_seconds / max(1, required_seconds), got_activations / max(1, required_activations))
+            self.training_meta.setText(f"Улучшение до Tier {step['tier']}  •  {fmt_num(cost)} фрагментов")
+            ratio = got_seconds / max(1, required_seconds)
             self.act_progress.setValue(min(100, round(ratio * 100)))
-            self.act_caption.setText(f"Время V4: {fmt_time(got_seconds)} / {fmt_time(required_seconds)} • активации: {got_activations} / {required_activations}")
+            self.act_caption.setText(f"Время V4 на этом этапе: {fmt_time(got_seconds)} / {fmt_time(required_seconds)}")
             self.fragment_caption.setText(f"Фрагменты: {fmt_num(p['fragments'])} / {fmt_num(cost)}")
-            self.trial_caption.setText(f"Испытание {trial}: {'пройдено' if p['trials_completed'] >= trial else 'не пройдено'} • у тебя {p['trials_completed']} / 5")
+            self.trial_caption.setText(f"Испытание {trial}: {'пройдено' if p['trials_completed'] >= trial else 'не пройдено'}  •  у тебя {p['trials_completed']} / 5")
             missing = []
-            if not training_ready:
-                missing.append(
-                    f"нужно ещё {fmt_time(max(0, required_seconds - got_seconds))} V4 ИЛИ "
-                    f"{max(0, required_activations - got_activations)} полных активаций"
-                )
+            if not time_ready: missing.append(f"ещё {fmt_time(required_seconds - got_seconds)} времени в V4")
             if p["fragments"] < cost: missing.append(f"не хватает {fmt_num(cost - p['fragments'])} фрагментов")
             if p["trials_completed"] < trial: missing.append(f"нужно испытание {trial}")
             if self.timer_running: missing.append("останови таймер перед подтверждением")
             can = bool(p["v4_unlocked"] and not missing)
-            self.can_train_label.setText("✓ МОЖНО ТРЕНИРОВАТЬСЯ" if can else "⌛ " + " • ".join(missing))
+            self.can_train_label.setText("✓ МОЖНО ТРЕНИРОВАТЬСЯ" if can else "⌛ " + "  •  ".join(missing))
             self.can_train_label.setObjectName("success" if can else "warning")
             self.train_button.setEnabled(can); self.start_button.setEnabled(not self.timer_running)
         self.can_train_label.style().unpolish(self.can_train_label); self.can_train_label.style().polish(self.can_train_label)
@@ -1439,7 +1392,7 @@ class MainWindow(QMainWindow):
                 seconds = float(p["training_seconds"])
                 if self.timer_running and self.timer_profile_id == p["id"] and self.timer_race == self.current_race and self.timer_started_at is not None:
                     seconds += time.monotonic() - self.timer_started_at
-                ready_for_notification = (training_requirements_met(notify_step, seconds, int(p["training_activations"]))
+                ready_for_notification = (seconds >= int(notify_step["minutes_required"]) * 60
                     and int(p["fragments"]) >= int(notify_step["cost"])
                     and int(p["trials_completed"]) >= int(notify_step["trial_required"])
                     and not self.timer_running)
@@ -1588,12 +1541,8 @@ class MainWindow(QMainWindow):
         if not step: return
         missing = []
         required_seconds = int(step["minutes_required"]) * 60
-        required_activations = int(step["activations_required"])
-        if not training_requirements_met(step, float(p["training_seconds"]), int(p["training_activations"])):
-            missing.append(
-                f"нужно {fmt_time(max(0, required_seconds - float(p['training_seconds'])))} времени V4 "
-                f"ИЛИ ещё {max(0, required_activations - int(p['training_activations']))} полных активаций"
-            )
+        if float(p["training_seconds"]) < required_seconds:
+            missing.append(f"нужно время в V4: ещё {fmt_time(required_seconds - float(p['training_seconds']))}")
         if p["fragments"] < step["cost"]: missing.append("не хватает фрагментов аккаунта")
         if p["trials_completed"] < step["trial_required"]: missing.append(f"нужно пройти испытание {step['trial_required']}")
         if self.timer_running: missing.append("сначала останови таймер")
