@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.4.1
+
+- Corrected the complete progression to all 10 purchasable upgrades across stages 2–5; stage 5 adds five upgrades rather than replacing earlier stages.
+- Restored the prior compact training table and shows the alternative activation requirement and duration after each upgrade.
+- Added the correct fragment costs, required V4 time, activation counts, trial gates and transformation durations from the supplied wiki reference.
+- Training readiness accepts the required V4 time OR the required number of full activations.
+- Existing profile/session history is preserved during database migration.
+
+## 2.4.0
+
+- Superseded by v2.4.1; the earlier release incorrectly represented the five stage-5 upgrades as the entire progression.
+
 ## 2.3.1
 
 - Fixed the Settings page on smaller windows by placing its panels in a scroll area.
