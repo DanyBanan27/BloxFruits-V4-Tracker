@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(2, 3, 1, 0),
-    prodvers=(2, 3, 1, 0),
+    filevers=(2, 4, 0, 0),
+    prodvers=(2, 4, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x4,
@@ -14,11 +14,11 @@ VSVersionInfo(
       StringTable('040904B0', [
         StringStruct('CompanyName', 'Blox Fruits V4 Tracker contributors'),
         StringStruct('FileDescription', 'Blox Fruits V4 Tracker'),
-        StringStruct('FileVersion', '2.3.1'),
+        StringStruct('FileVersion', '2.4.0'),
         StringStruct('InternalName', 'BloxFruitsV4Tracker'),
         StringStruct('OriginalFilename', 'Blox Fruits V4 Tracker.exe'),
         StringStruct('ProductName', 'Blox Fruits V4 Tracker'),
-        StringStruct('ProductVersion', '2.3.1')
+        StringStruct('ProductVersion', '2.4.0')
       ])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
