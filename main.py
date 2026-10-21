@@ -1702,7 +1702,12 @@ class MainWindow(QMainWindow):
             if button is not None:
                 button.setText(self._t(key))
                 button.setMinimumHeight(42)
-                button.setStyleSheet("QPushButton { color: palette(text); min-height: 32px; padding: 8px 12px; }")
+                theme = self.db.setting("theme", "emerald")
+                text_color = {"emerald": "#e8fff2", "purple": "#fbf1ff",
+                              "white": "#1c2738", "black": "#e6e8ec"}.get(theme, "#ecf4ff")
+                button.setStyleSheet(
+                    f"QPushButton {{ color: {text_color}; min-height: 32px; padding: 8px 12px; }}"
+                )
 
     def _refresh_settings_page(self):
         if not hasattr(self, "hotkey_editor"): return
