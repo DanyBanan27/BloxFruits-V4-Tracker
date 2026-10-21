@@ -6,7 +6,7 @@ A lightweight Windows desktop companion for tracking Blox Fruits Race V4 time, t
 
 **Current version:** `2.3.0`  
 **Interface languages:** Russian and English  
-**Developer contact:** [Telegram @The_Honored_One993](https://t.me/The_Honored_One993)
+**Community and support:** [Join the Discord server](https://discord.gg/SvYqcks5Pz)
 
 > This is an unofficial fan-made tracker. It is not affiliated with, endorsed by, or sponsored by Roblox or the Blox Fruits developers. The app does not connect to Roblox, inspect game memory, or automate gameplay. V4 time is recorded manually or with the configured global hotkey.
 
@@ -105,7 +105,7 @@ Pull requests and pushes to `main` are built and tested automatically by GitHub 
 
 ## Developer contact and support
 
-- Telegram: [@The_Honored_One993](https://t.me/The_Honored_One993)
+- Discord: [discord.gg/SvYqcks5Pz](https://discord.gg/SvYqcks5Pz)
 - For bugs and feature requests, use the GitHub **Issues** tab. Please do not attach your database or other private profile data to public issues.
 
 ## License
