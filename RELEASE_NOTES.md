@@ -1,16 +1,16 @@
-# Blox Fruits V4 Tracker v2.4.0
+# Blox Fruits V4 Tracker v2.4.1
 
 ## Highlights
 
-- Corrected the Race V4 upgrade reference to five stages.
-- Updated fragment costs to 3,000, 3,250, 3,500, 3,750, and 4,000.
-- Display approximate required V4 time, activation-count estimates, and typical duration per activation.
-- Migrates existing local databases to the five-stage model while preserving profile and session history.
-- Includes a standalone Windows EXE and SHA-256 checksum.
+- Restores all 10 purchasable upgrades across Race V4 stages 2, 3, 4 and 5.
+- Stage 2: 1 upgrade; stage 3: 1; stage 4: 3; stage 5: 5.
+- Includes fragment costs, required V4 time, the alternative full-activation count, trial requirements, and resulting transformation duration from the supplied wiki excerpt.
+- Training readiness is met by the required V4 time **or** the required number of full activations.
+- Preserves existing profile and session history when the local database is migrated.
 
 ## Windows release
 
-Download `Blox Fruits V4 Tracker.exe` from this release. Python is not required. The app does not read game memory or automate gameplay; save each V4 session manually or use the configured hotkey.
+Download `Blox Fruits V4 Tracker.exe` from this release. Python is not required. The app does not read game memory or automate gameplay; save each completed V4 activation manually or use the configured hotkey.
 
 Community: https://discord.gg/SvYqcks5Pz
 
