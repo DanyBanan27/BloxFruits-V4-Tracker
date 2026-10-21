@@ -1,0 +1,84 @@
+name: Windows build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Test and build Windows EXE
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-build.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-build.txt
+
+      - name: Check Python syntax
+        run: python -m compileall -q main.py tests
+
+      - name: Run database regression tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m unittest discover -s tests -v
+
+      - name: Build standalone EXE
+        run: >-
+          python -m PyInstaller --noconfirm --clean --onefile --windowed
+          --name "Blox Fruits V4 Tracker"
+          --icon "app_icon.ico"
+          --version-file "version_info.txt"
+          --add-data "app_icon.ico;."
+          main.py
+
+      - name: Generate SHA-256 checksum
+        shell: pwsh
+        run: |
+          $exe = 'dist/Blox Fruits V4 Tracker.exe'
+          if (!(Test-Path -LiteralPath $exe)) { throw "Build output not found: $exe" }
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $exe).Hash.ToLowerInvariant()
+          "$hash  Blox Fruits V4 Tracker.exe" | Set-Content -Encoding ascii 'dist/SHA256SUMS.txt'
+          Write-Host "SHA-256: $hash"
+
+      - name: Upload EXE for workflow runs
+        uses: actions/upload-artifact@v4
+        with:
+          name: Blox-Fruits-V4-Tracker-Windows
+          path: |
+            dist/Blox Fruits V4 Tracker.exe
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create draft GitHub release for version tags
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            dist/Blox Fruits V4 Tracker.exe
+            dist/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,47 @@
+name: Bug report
+description: Report a reproducible problem in Blox Fruits V4 Tracker
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach your database, passwords, certificates, or private profile data. Remove usernames and sensitive details from screenshots.
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: 2.3.0
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you click or change before the issue occurred?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error message or logs (optional)
+      description: Remove personal information before posting.

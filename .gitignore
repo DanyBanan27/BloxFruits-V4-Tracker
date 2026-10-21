@@ -1,0 +1,38 @@
+# Python bytecode and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# PyInstaller outputs
+build/
+dist/
+*.spec.bak
+
+# Local test output and coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Local app data / databases / backups
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+backups/
+
+# Private signing material — NEVER commit certificates or secrets
+*.pfx
+*.p12
+*.key
+.env
+.env.*
+
+# IDE and OS clutter
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
