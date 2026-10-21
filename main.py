@@ -68,6 +68,13 @@ def fmt_num(value: int) -> str:
     return f"{int(value):,}".replace(",", " ")
 
 
+def training_requirements_met(step, training_seconds: float, training_activations: int) -> bool:
+    """Training may be completed by V4 time OR by the required full activations."""
+    seconds_required = int(step["minutes_required"]) * 60
+    activations_required = int(step["activations_required"])
+    return float(training_seconds) >= seconds_required or int(training_activations) >= activations_required
+
+
 class Database:
     """SQLite storage with migrations from the first single-race version."""
 
@@ -599,7 +606,9 @@ _TRANSLATIONS = {
     "Твой прогресс по Race V4": "Your Race V4 progress", "РАСА": "RACE", "УРОВЕНЬ ИГРОКА": "PLAYER LEVEL",
     "ФРАГМЕНТЫ": "FRAGMENTS", "ВРЕМЯ В V4": "V4 TIME", "Выбранный профиль": "Selected profile",
     "Максимум: 3000": "Maximum: 3000", "Баланс аккаунта": "Account balance", "По выбранной расе": "For selected race",
-    "Время ИЛИ активации": "Time OR activations", "Испытаний пройдено": "Trials completed",
+    "Всего 10 улучшений в рамках стадий 2–5. Для тренировки достаточно нужного времени ИЛИ указанного числа полных активаций.": "10 upgrades in stages 2–5. Training requires the specified V4 time OR the specified number of full activations.",
+    "Название улучшения": "Upgrade", "Время ИЛИ активации": "Time OR activations", "Испытаний пройдено": "Trials required",
+
     "Стадия 2 — первое улучшение (50 сек.)": "Stage 2 — first upgrade (50 s)",
     "Стадия 3 — улучшение навыка (55 сек.)": "Stage 3 — skill upgrade (55 s)",
     "Стадия 4 — улучшение 1 (65 сек.)": "Stage 4 — upgrade 1 (65 s)",
@@ -1351,7 +1360,7 @@ class MainWindow(QMainWindow):
             cost = int(step["cost"]); trial = int(step["trial_required"])
             time_ready = got_seconds >= required_seconds
             activations_ready = got_activations >= required_activations
-            training_ready = time_ready or activations_ready
+            training_ready = training_requirements_met(step, got_seconds, got_activations)
             self.next_training_title.setText(step["title"])
             self.training_meta.setText(
                 f"Улучшение до Tier {step['tier']} • {fmt_num(cost)} фрагментов • "
@@ -1387,7 +1396,7 @@ class MainWindow(QMainWindow):
                     seconds += time.monotonic() - self.timer_started_at
                 time_ready = seconds >= int(notify_step["minutes_required"]) * 60
                 activations_ready = int(p["training_activations"]) >= int(notify_step["activations_required"])
-                ready_for_notification = ((time_ready or activations_ready)
+                ready_for_notification = (training_requirements_met(notify_step, seconds, int(p["training_activations"]))
                     and int(p["fragments"]) >= int(notify_step["cost"])
                     and int(p["trials_completed"]) >= int(notify_step["trial_required"])
                     and not self.timer_running)
@@ -1539,7 +1548,7 @@ class MainWindow(QMainWindow):
         required_activations = int(step["activations_required"])
         time_ready = float(p["training_seconds"]) >= required_seconds
         activations_ready = int(p["training_activations"]) >= required_activations
-        if not (time_ready or activations_ready):
+        if not training_requirements_met(step, float(p["training_seconds"]), int(p["training_activations"])):
             missing.append(
                 f"нужно {fmt_time(max(0, required_seconds - float(p['training_seconds'])))} времени V4 "
                 f"ИЛИ ещё {max(0, required_activations - int(p['training_activations']))} полных активаций"
