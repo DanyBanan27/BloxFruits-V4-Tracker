@@ -1214,6 +1214,22 @@ class MainWindow(QMainWindow):
         self.discord_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.discord_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(DISCORD_URL)))
         tools_row.addWidget(self.backup_button, 1); tools_row.addWidget(self.open_data_button, 1)
+
+        admin_tools_title = QLabel("Админские инструменты")
+        admin_tools_title.setStyleSheet("font-size:11pt;font-weight:750;")
+        admin_tools_row = QHBoxLayout()
+        self.export_history_button = QPushButton("Экспортировать историю (CSV)")
+        self.export_history_button.setMinimumHeight(42)
+        self.export_history_button.clicked.connect(self.export_history_csv)
+        self.export_progress_button = QPushButton("Экспортировать прогресс (CSV)")
+        self.export_progress_button.setMinimumHeight(42)
+        self.export_progress_button.clicked.connect(self.export_progress_csv)
+        admin_tools_row.addWidget(self.export_history_button, 1)
+        admin_tools_row.addWidget(self.export_progress_button, 1)
+        self.check_database_button = QPushButton("Проверить целостность базы")
+        self.check_database_button.setMinimumHeight(42)
+        self.check_database_button.clicked.connect(self.check_database_integrity)
+
         community_title = QLabel("Сообщество и поддержка")
         community_title.setStyleSheet("font-size:11pt;font-weight:700;")
         discord_link = QLabel('<a href="https://discord.gg/SvYqcks5Pz">Discord: discord.gg/SvYqcks5Pz</a>')
@@ -1228,6 +1244,9 @@ class MainWindow(QMainWindow):
         ebox.addWidget(self.backup_before_clear_checkbox)
         ebox.addWidget(tools_title)
         ebox.addLayout(tools_row)
+        ebox.addWidget(admin_tools_title)
+        ebox.addLayout(admin_tools_row)
+        ebox.addWidget(self.check_database_button)
         ebox.addWidget(community_title)
         ebox.addWidget(self.discord_button)
         ebox.addWidget(discord_link)
@@ -1665,6 +1684,137 @@ class MainWindow(QMainWindow):
         except (sqlite3.Error, OSError) as exc:
             QMessageBox.critical(self, self._t("Ошибка резервного копирования"), self._t(str(exc)))
 
+    def export_history_csv(self):
+        try:
+            rows = self.db.conn.execute("""
+                SELECT p.name AS profile_name, s.race AS race, 'V4-сессия' AS event_type,
+                       s.stage_tier AS tier, s.duration_seconds AS duration_seconds,
+                       NULL AS fragments, s.ended_at AS event_at
+                FROM sessions s JOIN profiles p ON p.id=s.profile_id
+                UNION ALL
+                SELECT p.name AS profile_name, h.race AS race, 'Тренировка' AS event_type,
+                       h.tier AS tier, NULL AS duration_seconds,
+                       h.cost AS fragments, h.completed_at AS event_at
+                FROM training_history h JOIN profiles p ON p.id=h.profile_id
+                ORDER BY event_at DESC
+            """).fetchall()
+        except sqlite3.Error as exc:
+            QMessageBox.critical(self, self._t("Экспорт истории"), str(exc))
+            return
+        if not rows:
+            QMessageBox.information(self, self._t("Экспорт истории"), self._t("Нет данных для экспорта."))
+            return
+        suggested = Path.home() / f"blox_fruits_v4_history_{datetime.now():%Y%m%d}.csv"
+        filename, _ = QFileDialog.getSaveFileName(
+            self, self._t("Экспорт истории"), str(suggested), self._t("CSV-файлы (*.csv)")
+        )
+        if not filename:
+            return
+        target = Path(filename)
+        if not target.suffix:
+            target = target.with_suffix(".csv")
+        if target.resolve() == DB_PATH.resolve():
+            QMessageBox.warning(self, self._t("Экспорт истории"),
+                                self._t("Выбери другой файл: нельзя перезаписать открытую базу данных."))
+            return
+        headers = [self._t("Профиль"), self._t("Раса"), self._t("Тип события"), "Tier",
+                   self._t("Длительность (сек.)"), self._t("Фрагменты"), self._t("Дата и время")]
+        try:
+            with target.open("w", newline="", encoding="utf-8-sig") as handle:
+                writer = csv.writer(handle, delimiter=";")
+                writer.writerow(headers)
+                for item in rows:
+                    duration = "" if item["duration_seconds"] is None else round(float(item["duration_seconds"]), 1)
+                    fragments = "" if item["fragments"] is None else int(item["fragments"])
+                    tier = "" if item["tier"] is None or int(item["tier"]) < 0 else int(item["tier"])
+                    writer.writerow([
+                        item["profile_name"], item["race"], self._t(str(item["event_type"])),
+                        tier, duration, fragments, item["event_at"]
+                    ])
+            QMessageBox.information(
+                self, self._t("Готово"),
+                f"{self._t('CSV-файл успешно сохранён:')}\n{target}\n{self._t('Записей:')} {len(rows)}"
+            )
+        except (OSError, csv.Error) as exc:
+            QMessageBox.critical(self, self._t("Экспорт истории"), str(exc))
+
+    def export_progress_csv(self):
+        export_rows = []
+        for base in self.db.profiles():
+            profile_id = int(base["id"])
+            races = self.db.active_races(profile_id)
+            if not races:
+                races = [str(base["race"])]
+            for race in races:
+                progress = self.db.profile(profile_id, race)
+                if not progress:
+                    continue
+                export_rows.append([
+                    base["name"], race, int(base["player_level"]), int(base["fragments"]),
+                    self._t("Да") if progress["v4_unlocked"] else self._t("Нет"),
+                    int(progress["v4_tier"]), int(progress["trials_completed"]),
+                    int(progress["training_activations"]), fmt_time(progress["training_seconds"]),
+                    fmt_time(progress["total_v4_seconds"])
+                ])
+        if not export_rows:
+            QMessageBox.information(self, self._t("Экспорт прогресса"), self._t("Нет данных для экспорта."))
+            return
+        suggested = Path.home() / f"blox_fruits_v4_progress_{datetime.now():%Y%m%d}.csv"
+        filename, _ = QFileDialog.getSaveFileName(
+            self, self._t("Экспорт прогресса"), str(suggested), self._t("CSV-файлы (*.csv)")
+        )
+        if not filename:
+            return
+        target = Path(filename)
+        if not target.suffix:
+            target = target.with_suffix(".csv")
+        if target.resolve() == DB_PATH.resolve():
+            QMessageBox.warning(self, self._t("Экспорт прогресса"),
+                                self._t("Выбери другой файл: нельзя перезаписать открытую базу данных."))
+            return
+        headers = [
+            self._t("Профиль"), self._t("Раса"), self._t("Уровень игрока"), self._t("Фрагменты"),
+            self._t("V4 открыта"), "Tier", self._t("Пройдено испытаний"),
+            self._t("Активации этапа"), self._t("Время этапа"), self._t("Общее время расы")
+        ]
+        try:
+            with target.open("w", newline="", encoding="utf-8-sig") as handle:
+                writer = csv.writer(handle, delimiter=";")
+                writer.writerow(headers)
+                writer.writerows(export_rows)
+            QMessageBox.information(
+                self, self._t("Готово"),
+                f"{self._t('CSV-файл успешно сохранён:')}\n{target}\n{self._t('Записей:')} {len(export_rows)}"
+            )
+        except (OSError, csv.Error) as exc:
+            QMessageBox.critical(self, self._t("Экспорт прогресса"), str(exc))
+
+    def check_database_integrity(self):
+        try:
+            integrity = str(self.db.conn.execute("PRAGMA integrity_check").fetchone()[0])
+            profiles = int(self.db.conn.execute("SELECT COUNT(*) FROM profiles").fetchone()[0])
+            race_entries = int(self.db.conn.execute("SELECT COUNT(*) FROM race_progress WHERE active=1").fetchone()[0])
+            sessions = int(self.db.conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0])
+            upgrades = int(self.db.conn.execute("SELECT COUNT(*) FROM training_history").fetchone()[0])
+            summary = "\n".join([
+                f"{self._t('Профилей:')} {profiles}",
+                f"{self._t('Рас в прогрессе:')} {race_entries}",
+                f"{self._t('Сессий:')} {sessions}",
+                f"{self._t('Тренировок:')} {upgrades}",
+            ])
+            if integrity.casefold() == "ok":
+                QMessageBox.information(
+                    self, self._t("Проверка целостности БД"),
+                    f"{self._t('База данных исправна.')}\n\n{summary}"
+                )
+            else:
+                QMessageBox.warning(
+                    self, self._t("Проверка целостности БД"),
+                    f"{self._t('База данных сообщила об ошибке:')}\n{integrity}\n\n{summary}"
+                )
+        except sqlite3.Error as exc:
+            QMessageBox.critical(self, self._t("Проверка целостности БД"), str(exc))
+
     def open_data_folder(self):
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(DB_PATH.parent)))
 
@@ -1746,6 +1896,9 @@ class MainWindow(QMainWindow):
         for button, key in (
             (getattr(self, "backup_button", None), "Создать резервную копию базы"),
             (getattr(self, "open_data_button", None), "Открыть папку данных"),
+            (getattr(self, "export_history_button", None), "Экспортировать историю (CSV)"),
+            (getattr(self, "export_progress_button", None), "Экспортировать прогресс (CSV)"),
+            (getattr(self, "check_database_button", None), "Проверить целостность базы"),
             (getattr(self, "discord_button", None), "Открыть Discord-сервер"),
         ):
             if button is not None:
