@@ -1,11 +1,16 @@
 # Changelog
 
+## 2.4.1
+
+- Corrected the progression to all 10 purchasable upgrades across stages 2–5. Stage 5 adds five upgrades rather than replacing earlier stages.
+- Restored the earlier compact training-table layout and added the activation alternative and duration after each upgrade.
+- Corrected each upgrade's fragment cost, time, activation count, trial requirement and transformation duration according to the supplied wiki reference.
+- Training readiness now accepts the required V4 time OR the required number of full activations.
+- Existing profile/session history is preserved by the database migration.
+
 ## 2.4.0
 
-- Replaced the old ten-tier placeholder list with five Race V4 upgrade stages.
-- Updated fragment costs, approximate V4 training time, estimated activation counts, and typical activation durations from the supplied reference.
-- Added a database migration that updates existing training rows and caps legacy tier progress at the new maximum while preserving profile and session history.
-- Expanded the training reference table and updated the Windows version metadata.
+- Superseded by v2.4.1: the earlier release incorrectly represented stage 5 as the entire progression.
 
 ## 2.3.1
 
