@@ -1,0 +1,36 @@
+name: One-time rollback cleanup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cleanup-bad-v2-4-0.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  remove-incorrect-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the incorrect v2.4.0 release and tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh api --method DELETE "repos/$env:GITHUB_REPOSITORY/releases/419417216"
+          if ($LASTEXITCODE -ne 0) { throw "Could not delete the incorrect v2.4.0 release." }
+
+          gh api --method DELETE "repos/$env:GITHUB_REPOSITORY/git/refs/tags/v2.4.0"
+          if ($LASTEXITCODE -ne 0) { throw "Could not delete the incorrect v2.4.0 tag." }
+
+      - name: Remove this temporary workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $file = gh api "repos/$env:GITHUB_REPOSITORY/contents/.github/workflows/cleanup-bad-v2-4-0.yml?ref=main" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw "Could not read temporary workflow metadata." }
+
+          gh api --method DELETE "repos/$env:GITHUB_REPOSITORY/contents/.github/workflows/cleanup-bad-v2-4-0.yml" -f message="Remove one-time rollback cleanup workflow" -f sha="$($file.sha)" -f branch="main"
+          if ($LASTEXITCODE -ne 0) { throw "Could not remove the temporary workflow file." }
