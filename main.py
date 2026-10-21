@@ -31,7 +31,7 @@ IS_FROZEN = bool(getattr(sys, "frozen", False))
 APP_DIR = Path(sys.executable).resolve().parent if IS_FROZEN else Path(__file__).resolve().parent
 BUNDLE_DIR = Path(getattr(sys, "_MEIPASS", APP_DIR))
 ICON_PATH = BUNDLE_DIR / "app_icon.ico"
-TELEGRAM_URL = "https://t.me/The_Honored_One993"
+DISCORD_URL = "https://discord.gg/SvYqcks5Pz"
 
 TRAININGS = [
     {"tier": 1, "cost": 1000, "activations": 3, "minutes": 3, "trial": 1, "label": "Energy Training Tier 1"},
@@ -613,10 +613,11 @@ _TRANSLATIONS = {
     "Сохранить горячую клавишу": "Save hotkey", "Новая комбинация:": "New shortcut:", "Статус регистрации клавиши появится здесь.": "Hotkey status will appear here.",
     "Интерфейс": "Interface", "Язык интерфейса": "Interface language", "Тема оформления": "Theme", "Русский": "Russian", "Изумрудная": "Emerald", "Пурпурная": "Purple", "Белая": "White", "Чёрная": "Black",
     "Уведомления": "Notifications", "Уведомлять при готовности к улучшению": "Notify when an upgrade is ready", "Звуковой сигнал вместе с уведомлением": "Play a sound with notifications",
-    "Связаться с разработчиком · Telegram": "Contact the developer · Telegram", "Профиль:": "Profile:", "Раса:": "Race:",
+    "Профиль:": "Profile:", "Раса:": "Race:",
     "Дополнительные настройки": "Additional settings", "Запускать вместе с Windows": "Launch with Windows", "Сворачивать в трей при закрытии окна": "Minimize to tray when closing the window",
-    "Создать резервную копию базы": "Create database backup", "Открыть папку данных": "Open data folder", "Создавать резервную копию перед очисткой времени": "Create a backup before clearing time records", "Связаться с разработчиком · Telegram": "Contact the developer · Telegram",
-    "Разработчик: @The_Honored_One993 · Настройки и данные хранятся локально на этом ПК.": "Developer: @The_Honored_One993 · Settings and data are stored locally on this PC.",
+    "Создать резервную копию базы": "Create database backup", "Открыть папку данных": "Open data folder", "Создавать резервную копию перед очисткой времени": "Create a backup before clearing time records",
+    "Инструменты базы данных": "Database tools", "Сообщество и поддержка": "Community and support", "Открыть Discord-сервер": "Open Discord server",
+    "Данные и настройки хранятся локально на этом ПК.": "Data and settings are stored locally on this PC.", "Discord: discord.gg/SvYqcks5Pz": "Discord: discord.gg/SvYqcks5Pz",
     "Создай профиль, чтобы отслеживать прогресс Race V4.": "Create a profile to track Race V4 progress.",
     "Сначала добавь профиль": "Add a profile first", "Профили и прогресс сохраняются локально на компьютере.": "Profiles and progress are saved locally on this PC.",
     "НЕТ ПРОФИЛЯ": "NO PROFILE", "Нет рас": "No races", "Профиль:": "Profile:", "Раса:": "Race:",
@@ -1150,17 +1151,38 @@ class MainWindow(QMainWindow):
         self.minimize_tray_checkbox.setEnabled(QSystemTrayIcon.isSystemTrayAvailable())
         self.backup_before_clear_checkbox = QCheckBox("Создавать резервную копию перед очисткой времени")
         self.backup_before_clear_checkbox.setChecked(self.db.setting("backup_before_clear", "1") == "1")
+        tools_title = QLabel("Инструменты базы данных")
+        tools_title.setStyleSheet("font-size:11pt;font-weight:700;")
         tools_row = QHBoxLayout()
         self.backup_button = QPushButton("Создать резервную копию базы")
+        self.backup_button.setMinimumHeight(42)
         self.backup_button.clicked.connect(self.backup_database)
         self.open_data_button = QPushButton("Открыть папку данных")
+        self.open_data_button.setMinimumHeight(42)
         self.open_data_button.clicked.connect(self.open_data_folder)
-        self.contact_button = QPushButton("Связаться с разработчиком · Telegram")
-        self.contact_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(TELEGRAM_URL)))
-        tools_row.addWidget(self.backup_button); tools_row.addWidget(self.open_data_button)
-        ebox.addWidget(et); ebox.addWidget(self.launch_startup_checkbox); ebox.addWidget(self.minimize_tray_checkbox); ebox.addWidget(self.backup_before_clear_checkbox); ebox.addLayout(tools_row); ebox.addWidget(self.contact_button)
-        contact = QLabel("Разработчик: @The_Honored_One993 · Настройки и данные хранятся локально на этом ПК.")
-        contact.setObjectName("muted"); contact.setWordWrap(True); ebox.addWidget(contact)
+        self.discord_button = QPushButton("Открыть Discord-сервер")
+        self.discord_button.setMinimumHeight(42)
+        self.discord_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.discord_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(DISCORD_URL)))
+        tools_row.addWidget(self.backup_button, 1); tools_row.addWidget(self.open_data_button, 1)
+        community_title = QLabel("Сообщество и поддержка")
+        community_title.setStyleSheet("font-size:11pt;font-weight:700;")
+        discord_link = QLabel('<a href="https://discord.gg/SvYqcks5Pz">Discord: discord.gg/SvYqcks5Pz</a>')
+        discord_link.setOpenExternalLinks(True)
+        discord_link.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        discord_link.setObjectName("muted")
+        local_note = QLabel("Данные и настройки хранятся локально на этом ПК.")
+        local_note.setObjectName("muted"); local_note.setWordWrap(True)
+        ebox.addWidget(et)
+        ebox.addWidget(self.launch_startup_checkbox)
+        ebox.addWidget(self.minimize_tray_checkbox)
+        ebox.addWidget(self.backup_before_clear_checkbox)
+        ebox.addWidget(tools_title)
+        ebox.addLayout(tools_row)
+        ebox.addWidget(community_title)
+        ebox.addWidget(self.discord_button)
+        ebox.addWidget(discord_link)
+        ebox.addWidget(local_note)
         lay.addWidget(extras)
         lay.addStretch()
 
@@ -1670,6 +1692,17 @@ class MainWindow(QMainWindow):
                 widget.setPlaceholderText(localize_text(widget.placeholderText(), lang))
         self.page_title.setText(localize_text(["Обзор", "Профили", "База тренировок", "История", "Настройки"][self.stack.currentIndex()], lang))
         self.setWindowTitle(APP_NAME if lang == "ru" else "Blox Fruits V4 Tracker")
+        # Re-apply action labels explicitly after the recursive translator. This also
+        # prevents empty button captions on some Qt/Windows stylesheet combinations.
+        for button, key in (
+            (getattr(self, "backup_button", None), "Создать резервную копию базы"),
+            (getattr(self, "open_data_button", None), "Открыть папку данных"),
+            (getattr(self, "discord_button", None), "Открыть Discord-сервер"),
+        ):
+            if button is not None:
+                button.setText(self._t(key))
+                button.setMinimumHeight(42)
+                button.setStyleSheet("QPushButton { color: palette(text); min-height: 32px; padding: 8px 12px; }")
 
     def _refresh_settings_page(self):
         if not hasattr(self, "hotkey_editor"): return
