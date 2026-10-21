@@ -17,13 +17,13 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFrame, QLabel, QPushButton,
     QVBoxLayout, QHBoxLayout, QGridLayout, QStackedWidget, QComboBox,
     QProgressBar, QDialog, QFormLayout, QLineEdit, QSpinBox, QCheckBox,
-    QAbstractItemView,
+    QAbstractItemView, QLayout,
     QMessageBox, QTableWidget, QTableWidgetItem, QHeaderView, QSizePolicy,
     QKeySequenceEdit, QScrollArea, QFileDialog, QSystemTrayIcon, QMenu
 )
 
 APP_NAME = "Blox Fruits V4 Tracker"
-APP_VERSION = "2.3.0"
+APP_VERSION = "2.3.1"
 RACES = ["Human", "Rabbit", "Shark", "Angel", "Ghoul", "Cyborg", "Draco"]
 DEFAULT_HOTKEY = "F8"
 HOTKEY_ID = 0xB40
@@ -587,7 +587,7 @@ _TRANSLATIONS = {
     "✦   База тренировок": "✦   Training database", "◷   История": "◷   History",
     "⚙   Настройки": "⚙   Settings", "BLOX FRUITS  •  COMPANION": "BLOX FRUITS  •  COMPANION",
     "ТВОЙ ПРОГРЕСС": "YOUR PROGRESS", "Локальная база SQLite\nДанные хранятся на ПК": "Local SQLite database\nData is stored on this PC",
-    "Версия 2.3.0 · SQLite\nДанные хранятся на ПК": "Version 2.3.0 · SQLite\nData is stored on this PC",
+    "Версия 2.3.1 · SQLite\nДанные хранятся на ПК": "Version 2.3.1 · SQLite\nData is stored on this PC",
     "Обзор": "Overview", "Профили": "Profiles", "База тренировок": "Training database", "История": "History", "Настройки": "Settings",
     "Твой прогресс по Race V4": "Your Race V4 progress", "РАСА": "RACE", "УРОВЕНЬ ИГРОКА": "PLAYER LEVEL",
     "ФРАГМЕНТЫ": "FRAGMENTS", "ВРЕМЯ В V4": "V4 TIME", "Выбранный профиль": "Selected profile",
@@ -1103,7 +1103,27 @@ class MainWindow(QMainWindow):
         return page
 
     def _build_settings_page(self):
-        page = QWidget(); lay = QVBoxLayout(page); lay.setContentsMargins(0, 0, 0, 0); lay.setSpacing(12)
+        # Settings contain several stacked panels. Put them in a resizable scroll area
+        # so their minimum heights are respected on smaller windows and no controls
+        # overlap or get clipped near the bottom of the page.
+        page = QWidget()
+        outer = QVBoxLayout(page)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        scroll = QScrollArea()
+        scroll.setObjectName("settingsScrollArea")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        content = QWidget()
+        lay = QVBoxLayout(content)
+        lay.setContentsMargins(0, 0, 8, 0)
+        lay.setSpacing(12)
+        # Ensure the scroll area uses the natural height of its complete contents.
+        lay.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        scroll.setWidget(content)
+        outer.addWidget(scroll, 1)
 
         hotkey_panel = QFrame(); hotkey_panel.setObjectName("panel")
         box = QVBoxLayout(hotkey_panel); box.setContentsMargins(18, 15, 18, 15); box.setSpacing(9)
