@@ -4,7 +4,7 @@ A lightweight Windows desktop companion for tracking Blox Fruits Race V4 time, t
 
 ![Blox Fruits V4 Tracker app icon](app_icon.png)
 
-**Current version:** `2.3.1`  
+**Current version:** `2.4.0`  
 **Interface languages:** Russian and English  
 **Community and support:** [Join the Discord server](https://discord.gg/SvYqcks5Pz)
 
@@ -12,7 +12,7 @@ A lightweight Windows desktop companion for tracking Blox Fruits Race V4 time, t
 
 ## Features
 
-- Track V4 time overall and for the current upgrade stage.
+- Track the five Race V4 upgrade stages, with fragment costs, approximate V4 time, activation estimates, and typical activation duration.
 - Keep several races under one account profile, with separate progress for each race.
 - Track player level, fragments, V4 tier, trials, training history, and activation sessions.
 - Use a configurable global hotkey (default: `F8`) while the game is focused.
