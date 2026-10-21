@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from main import Database, RACES
+from main import Database, RACES, training_requirements_met
 
 
 class DatabaseRegressionTests(unittest.TestCase):
@@ -76,6 +76,9 @@ class DatabaseRegressionTests(unittest.TestCase):
         required_activations = int(step["activations_required"])
         self.assertEqual(required_seconds, 180)
         self.assertEqual(required_activations, 3)
+        self.assertTrue(training_requirements_met(step, 180, 0))
+        self.assertTrue(training_requirements_met(step, 0, 3))
+        self.assertFalse(training_requirements_met(step, 179, 2))
 
 
     def test_clear_time_history_resets_selected_race_only(self):
